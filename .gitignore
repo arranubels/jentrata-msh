@@ -8,3 +8,5 @@ target-eclipse/
 .idea/
 *.iml
 git.properties
+.stfolder
+.stignore

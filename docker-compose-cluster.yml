@@ -1,0 +1,48 @@
+version: '2'
+services:
+  posters:
+    image: "postgres:9.5"
+    environment:
+      POSTGRES_USER: jentrata
+      POSTGRES_PASSWORD: jentrata
+      POSTGRES_DB: jentrata
+      DB_USER_NAME: corvus
+      DB_USER_PASS: corvus
+    volumes:
+    - ./Dist/src/main/scripts/sql/as2.sql:/work/sql/as2.sql
+    - ./Dist/src/main/scripts/sql/ebms.sql:/work/sql/ebms.sql
+    - ./ContainerFiles/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh
+  jentrata-msh:
+    build: .
+    depends_on:
+      - posters
+      - activemq
+    links:
+      - posters:db
+      - activemq:activemq
+    environment:
+      TOMCAT_USER_NAME: corvus
+      TOMCAT_USER_PASS: corvus
+      DB_USER_NAME: corvus
+      DB_USER_PASS: corvus
+      DB_HOST_NAME: db
+      ACTIVEMQ_MODE: external
+      ACTIVEMQ_URL: tcp://activemq:61616
+      ACTIVEMQ_USER: admin
+      ACTIVEMQ_PASS: admin
+      VIRTUAL_HOST: jentrata-msh.local
+      VIRTUAL_PORT: 8080
+  activemq:
+    image: "webcenter/activemq"
+    ports:
+      - "8161:8161"
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    depends_on:
+      - jentrata-msh
+    ports:
+      - "8080:80"
+    volumes:
+    - /var/run/docker.sock:/tmp/docker.sock:ro
+#    - ./htpasswd:/etc/nginx/htpasswd
+#    - ./certs:/etc/nginx/certs
